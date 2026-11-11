@@ -1,5 +1,170 @@
-<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0a0e19"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="EWEW"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><title>EWEW — Din AI</title><style>
-:root{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e9efff;background:#090d18}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 60% -20%,#27375e 0,transparent 55%),#090d18;min-height:100dvh}button,input,textarea{font:inherit}button{cursor:pointer}header{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 12px;border-bottom:1px solid #ffffff13}.logo{font-size:24px;font-weight:800;letter-spacing:3px}.logo span{color:#9f91ff}.tag{font-size:10px;letter-spacing:2px;color:#a7b3d1}button{border:1px solid #ffffff22;border-radius:12px;background:#1c2540;color:#f3f5ff;padding:10px 12px}button.primary{background:linear-gradient(135deg,#8064f6,#3c81e8);border:0}.layout{max-width:900px;margin:auto;min-height:calc(100dvh - 75px);display:flex;flex-direction:column}.toolbar{display:flex;gap:8px;padding:14px 16px;overflow-x:auto}.toolbar button{white-space:nowrap}.conversation{flex:1;overflow:auto;padding:12px 18px 130px;display:flex;flex-direction:column;gap:16px}.welcome{text-align:center;margin:auto;max-width:500px;padding:45px 10px}.orb{height:80px;width:80px;margin:auto auto 24px;border-radius:24px;background:linear-gradient(135deg,#9c7dff,#3f82f4);display:grid;place-items:center;font-size:36px;box-shadow:0 10px 50px #7757ed55}.welcome h1{font-size:29px;margin:0 0 12px}.welcome p{color:#a9b6d0;line-height:1.6}.suggestions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:28px;text-align:left}.suggestions button{font-size:13px;min-height:65px;background:#151e33}.bubble{max-width:90%;padding:14px 17px;line-height:1.55;border-radius:17px;white-space:pre-wrap;overflow-wrap:anywhere}.bubble.user{align-self:flex-end;background:#3d4d87}.bubble.assistant{align-self:flex-start;background:#182239;border:1px solid #ffffff12}.bubble.error{border-color:#e87a7a}.role{font-size:11px;color:#b2c0e0;margin-bottom:6px;letter-spacing:1px}.composer{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(transparent,#090d18 18%);padding:18px 14px max(18px,env(safe-area-inset-bottom))}.compose-inner{max-width:865px;margin:auto;display:flex;gap:9px;align-items:end;background:#172138;border:1px solid #3d4d6e;border-radius:19px;padding:8px}textarea{flex:1;min-height:43px;max-height:130px;resize:none;border:0;outline:0;background:transparent;color:white;padding:10px}textarea::placeholder{color:#8391ae}.foot{text-align:center;color:#7989aa;font-size:11px;margin-top:9px}dialog{width:min(92vw,520px);border:1px solid #465277;border-radius:20px;background:#111b30;color:#eef2ff;padding:22px}dialog::backdrop{background:#000a}dialog input,dialog select{width:100%;padding:12px;border-radius:10px;background:#0a1121;color:white;border:1px solid #455275;margin:9px 0 14px}dialog select{padding:12px;border-radius:10px;background:#0a1121;color:white;border:1px solid #455275;margin:9px 0 14px}dialog p,dialog small{color:#a9b6d0;line-height:1.5}dialog menu{display:flex;justify-content:flex-end;gap:10px;padding:0}#history{display:flex;flex-direction:column;gap:8px;max-height:45vh;overflow:auto}#history button{text-align:left}#history .selected{border-color:#8c7eff}@media(min-width:700px){.conversation{padding-left:50px;padding-right:50px}.bubble{max-width:75%}}
-</style></head><body><header><div><div class="logo">E<span>W</span>EW</div><div class="tag">YOUR INTELLIGENCE, EVOLVED</div></div><button id="settingsBtn" aria-label="Inställningar">⚙ Inställningar</button></header><main class="layout"><nav class="toolbar"><button id="newBtn" class="primary">＋ Ny chatt</button><button id="historyBtn">☰ Historik</button><button id="exportBtn">⇩ Exportera</button><button id="importBtn">⇧ Importera</button><input type="file" id="importFile" accept="application/json,.json" hidden><button id="deleteBtn">⌫ Radera chatt</button></nav><section id="conversation" class="conversation" aria-live="polite"></section></main><div class="composer"><div class="compose-inner"><textarea id="prompt" rows="1" placeholder="Fråga EWEW vad som helst..."></textarea><button class="primary" id="sendBtn">Skicka ↑</button></div><div class="foot" id="status">Privat historik sparas på den här enheten</div></div><dialog id="settingsDialog"><h2>AI-inställningar</h2><p>EWEW fungerar som chattgränssnitt direkt. För riktiga AI-svar behövs en kompatibel AI-tjänst. Ange dess API-adress och modell. Ingen betalning eller tjänst aktiveras automatiskt.</p><label>Gratisleverantör <select id="provider"><option value="custom">Egen OpenAI-kompatibel tjänst</option><option value="groq">Groq (gratisnivå kan finnas)</option><option value="openrouter">OpenRouter (gratis modeller kan finnas)</option></select></label><label>API-adress (OpenAI-kompatibel /chat/completions)<input id="endpoint" placeholder="https://.../v1/chat/completions" autocomplete="off"></label><label>Modell<input id="model" placeholder="modellnamn"></label><label>API-nyckel (valfri)<input id="apiKey" type="password" placeholder="Lämna tom om tjänsten inte kräver nyckel"></label><small>Gratisnivåer och modellnamn kan ändras. En leverantör kan kräva gratis registrering och webbläsaranrop (CORS) kan blockeras. Välj aldrig en betald plan för EWEW. Nyckeln sparas inte. Den finns endast i minnet tills du stänger appen. Använd aldrig en hemlig betalnyckel i en offentlig webbsida. Meddelanden skickas till vald leverantör när du trycker Skicka.</small><menu><button id="cancelSettings">Avbryt</button><button class="primary" id="saveSettings">Spara</button></menu></dialog><dialog id="historyDialog"><h2>Dina konversationer</h2><div id="history"></div><menu><button id="closeHistory">Stäng</button></menu></dialog><script>
-const $=id=>document.getElementById(id);const PROVIDERS={groq:{endpoint:'https://api.groq.com/openai/v1/chat/completions',model:'llama-3.3-70b-versatile'},openrouter:{endpoint:'https://openrouter.ai/api/v1/chat/completions',model:'openrouter/free'}};const KEY='ewew.chats.v1',CONF='ewew.config.v1';let chats=[],active=null,apiKey='',busy=false;try{chats=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{};let config={};try{config=JSON.parse(localStorage.getItem(CONF)||'{}')}catch{};function persist(){try{localStorage.setItem(KEY,JSON.stringify(chats))}catch(e){status('Lagringen är full eller blockerad. Exportera dina konversationer.')}}function chat(){return chats.find(x=>x.id===active)}function fresh(){if(busy)return;const c={id:crypto.randomUUID(),title:'Ny konversation',messages:[],created:Date.now()};chats.unshift(c);active=c.id;persist();render()}function el(tag,cls,text){let n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}function render(){let root=$('conversation');root.replaceChildren();let c=chat();if(!c||!c.messages.length){let w=el('div','welcome');w.innerHTML='<div class="orb">✦</div><h1>Vad kan jag hjälpa dig med?</h1><p>Välkommen till EWEW. Din personliga AI-arbetsyta, skapad för din iPhone.</p>';let s=el('div','suggestions');['Hjälp mig planera dagen','Förklara något svårt','Ge mig kreativa idéer','Hjälp mig skriva en text'].forEach(t=>{let b=el('button','',t);b.onclick=()=>{$('prompt').value=t;$('prompt').focus()};s.append(b)});w.append(s);root.append(w)}else c.messages.forEach(m=>{let b=el('div','bubble '+m.role+(m.error?' error':''));b.append(el('div','role',m.role==='user'?'DU':'EWEW'));b.append(el('div','',m.content));root.append(b)});root.scrollTop=root.scrollHeight}function status(t){$('status').textContent=t}async function send(){if(busy)return;const content=$('prompt').value.trim();if(!content)return;if(!chat())fresh();let c=chat();const chatId=c.id;c.messages.push({role:'user',content});if(c.messages.length===1)c.title=content.slice(0,55);$('prompt').value='';persist();render();if(!config.endpoint||!config.model){c.messages.push({role:'assistant',content:'EWEW är installerad som chattapp, men AI är ännu inte ansluten. Öppna Inställningar och välj en kompatibel AI-tjänst. Ingen betalning krävs för själva appen.',error:true});persist();render();return}busy=true;$('sendBtn').disabled=true;status('EWEW tänker…');try{let u=new URL(config.endpoint);if(u.protocol!=='https:')throw Error('API-adressen måste använda HTTPS.');let messages=[{role:'system',content:'Du är EWEW, en hjälpsam AI-assistent. Svara på svenska om användaren inte ber om annat.'},...c.messages.filter(x=>!x.error).slice(-20).map(({role,content})=>({role,content}))];let headers={'Content-Type':'application/json'};if(apiKey)headers.Authorization='Bearer '+apiKey;let controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);let response;try{response=await fetch(u.toString(),{method:'POST',headers,signal:controller.signal,body:JSON.stringify({model:config.model,messages,stream:false})})}finally{clearTimeout(timer)}if(!response.ok)throw Error('AI-tjänsten svarade med HTTP '+response.status);let data=await response.json();let answer=data?.choices?.[0]?.message?.content;if(typeof answer!=='string'||!answer.trim())throw Error('AI-tjänsten returnerade inget textsvar');c.messages.push({role:'assistant',content:answer})}catch(e){c.messages.push({role:'assistant',content:'Kunde inte hämta AI-svar: '+e.message+' Kontrollera adress, modell, CORS-stöd och eventuell nyckel i Inställningar.',error:true})}finally{busy=false;$('sendBtn').disabled=false;status('Privat historik sparas på den här enheten');persist();render()}}$('sendBtn').onclick=send;$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});$('newBtn').onclick=fresh;$('provider').onchange=()=>{let v=PROVIDERS[$('provider').value];if(v){$('endpoint').value=v.endpoint;$('model').value=v.model}};$('settingsBtn').onclick=()=>{$('endpoint').value=config.endpoint||'';$('model').value=config.model||'';$('apiKey').value='';$('provider').value=Object.keys(PROVIDERS).find(k=>PROVIDERS[k].endpoint===config.endpoint)||'custom';$('settingsDialog').showModal()};$('cancelSettings').onclick=()=>$('settingsDialog').close();$('saveSettings').onclick=()=>{config={endpoint:$('endpoint').value.trim(),model:$('model').value.trim()};apiKey=$('apiKey').value;localStorage.setItem(CONF,JSON.stringify(config));$('settingsDialog').close();status(config.endpoint?'AI-tjänst konfigurerad':'AI-tjänst inte ansluten')};$('historyBtn').onclick=()=>{let h=$('history');h.replaceChildren();chats.forEach(c=>{let b=el('button',c.id===active?'selected':'',c.title);b.onclick=()=>{active=c.id;render();$('historyDialog').close()};h.append(b)});$('historyDialog').showModal()};$('closeHistory').onclick=()=>$('historyDialog').close();$('deleteBtn').onclick=()=>{if(busy)return;let c=chat();if(!c||!confirm('Radera den här konversationen permanent från denna enhet?'))return;chats=chats.filter(x=>x.id!==c.id);active=chats[0]?.id||null;persist();if(!active)fresh();else render()};$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{if(f.size>5_000_000)throw Error('Filen är för stor (max 5 MB)');let data=JSON.parse(await f.text());if(!Array.isArray(data)||data.length>500||!data.every(c=>typeof c.title==='string'&&Array.isArray(c.messages)&&c.messages.length<1000&&c.messages.every(m=>['user','assistant'].includes(m.role)&&typeof m.content==='string'&&m.content.length<100000)))throw Error('Ogiltig EWEW-export');if(!confirm('Importera '+data.length+' konversationer? Befintliga konversationer behålls.'))return;const imported=data.map(c=>({id:crypto.randomUUID(),title:c.title.slice(0,80),created:Number(c.created)||Date.now(),messages:c.messages.map(m=>({role:m.role,content:m.content,error:!!m.error}))}));chats=[...imported,...chats];active=chats[0]?.id;persist();render();status('Importen klar')}catch(err){alert('Kunde inte importera: '+err.message)}finally{e.target.value=''}};$('exportBtn').onclick=()=>{let blob=new Blob([JSON.stringify(chats,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ewew-konversationer.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};if(chats.length)active=chats[0].id;else fresh();render();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
-</script></body></html>
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0e19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="EWEW">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>EWEW — Din AI</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e9efff;background:#090d18}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 60% -20%,#27375e,transparent 55%),#090d18}
+button,input,textarea,select{font:inherit}button{cursor:pointer;border:1px solid #ffffff22;border-radius:12px;background:#1c2540;color:#f3f5ff;padding:10px 12px}
+button.primary{background:linear-gradient(135deg,#8064f6,#3c81e8);border:0}button:disabled{opacity:.5}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px;border-bottom:1px solid #ffffff13}
+.logo{font-size:24px;font-weight:800;letter-spacing:3px}.logo span{color:#9f91ff}.tag{font-size:10px;letter-spacing:2px;color:#a7b3d1}
+.layout{max-width:900px;margin:auto;min-height:calc(100dvh - 75px);display:flex;flex-direction:column}
+.toolbar{display:flex;gap:8px;padding:14px 16px;overflow-x:auto}.toolbar button{white-space:nowrap}
+.conversation{flex:1;overflow:auto;padding:12px 18px 140px;display:flex;flex-direction:column;gap:16px}
+.welcome{text-align:center;margin:auto;max-width:500px;padding:45px 10px}
+.orb{height:80px;width:80px;margin:0 auto 24px;border-radius:24px;background:linear-gradient(135deg,#9c7dff,#3f82f4);display:grid;place-items:center;font-size:36px;box-shadow:0 10px 50px #7757ed55}
+.welcome h1{font-size:29px;margin:0 0 12px}.welcome p,dialog p,dialog small{color:#a9b6d0;line-height:1.6}
+.suggestions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:28px;text-align:left}.suggestions button{font-size:13px;min-height:65px;background:#151e33}
+.bubble{max-width:90%;padding:14px 17px;line-height:1.55;border-radius:17px;white-space:pre-wrap;overflow-wrap:anywhere}
+.bubble.user{align-self:flex-end;background:#3d4d87}.bubble.assistant{align-self:flex-start;background:#182239;border:1px solid #ffffff12}.bubble.error{border-color:#e87a7a}
+.role{font-size:11px;color:#b2c0e0;margin-bottom:6px;letter-spacing:1px}
+.composer{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(transparent,#090d18 18%);padding:18px 14px max(18px,env(safe-area-inset-bottom))}
+.compose-inner{max-width:865px;margin:auto;display:flex;gap:9px;align-items:end;background:#172138;border:1px solid #3d4d6e;border-radius:19px;padding:8px}
+textarea{flex:1;min-height:43px;max-height:130px;resize:none;border:0;outline:0;background:transparent;color:white;padding:10px}
+textarea::placeholder{color:#8391ae}.foot{text-align:center;color:#7989aa;font-size:11px;margin-top:9px}
+dialog{width:min(92vw,520px);border:1px solid #465277;border-radius:20px;background:#111b30;color:#eef2ff;padding:22px}
+dialog::backdrop{background:#000a}dialog input,dialog select{width:100%;padding:12px;border-radius:10px;background:#0a1121;color:white;border:1px solid #455275;margin:9px 0 14px}
+dialog menu{display:flex;justify-content:flex-end;gap:10px;padding:0}
+#history{display:flex;flex-direction:column;gap:8px;max-height:45vh;overflow:auto}#history button{text-align:left}#history .selected{border-color:#8c7eff}
+@media(min-width:700px){.conversation{padding-left:50px;padding-right:50px}.bubble{max-width:75%}}
+</style>
+</head>
+<body>
+<header><div><div class="logo">E<span>W</span>EW</div><div class="tag">YOUR INTELLIGENCE, EVOLVED</div></div><button id="settingsBtn">⚙ Inställningar</button></header>
+<main class="layout">
+<nav class="toolbar">
+<button id="newBtn" class="primary">＋ Ny chatt</button>
+<button id="historyBtn">☰ Historik</button>
+<button id="exportBtn">⇩ Exportera</button>
+<button id="importBtn">⇧ Importera</button>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+<button id="deleteBtn">⌫ Radera chatt</button>
+</nav>
+<section id="conversation" class="conversation" aria-live="polite"></section>
+</main>
+<div class="composer"><div class="compose-inner"><textarea id="prompt" rows="1" placeholder="Fråga EWEW vad som helst..."></textarea><button class="primary" id="sendBtn">Skicka ↑</button></div><div class="foot" id="status">Privat historik sparas på den här enheten</div></div>
+<dialog id="settingsDialog">
+<h2>AI-inställningar</h2>
+<p>Välj Groq och ange din egen API-nyckel för AI-svar. Gratisnivån kan ha användningsgränser. Ingen betaltjänst aktiveras automatiskt.</p>
+<label>AI-leverantör<select id="provider"><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="custom">Egen kompatibel tjänst</option></select></label>
+<label>API-adress<input id="endpoint" autocomplete="off"></label>
+<label>Modell<input id="model" autocomplete="off"></label>
+<label>API-nyckel<input id="apiKey" type="password" autocomplete="off" placeholder="Klistra in din privata nyckel"></label>
+<small>Nyckeln sparas bara i webbläsarens aktuella session, inte i GitHub eller chattexporter. En webbsida kan inte skydda nyckeln lika bra som en server. Använd en separat, begränsad gratisnyckel. Dela den aldrig i chatten eller i en skärmbild.</small>
+<menu><button id="cancelSettings">Avbryt</button><button id="testSettings">Testa anslutning</button><button class="primary" id="saveSettings">Spara</button></menu>
+<p id="testResult" role="status"></p>
+</dialog>
+<dialog id="historyDialog"><h2>Dina konversationer</h2><div id="history"></div><menu><button id="closeHistory">Stäng</button></menu></dialog>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const PROVIDERS={
+groq:{endpoint:"https://api.groq.com/openai/v1/chat/completions",model:"llama-3.3-70b-versatile"},
+openrouter:{endpoint:"https://openrouter.ai/api/v1/chat/completions",model:"openrouter/free"}
+};
+const KEY="ewew.chats.v1",CONF="ewew.config.v1",SESSION="ewew.session.key";
+let chats=[],active=null,config={},apiKey="",busy=false;
+try{chats=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(chats))chats=[]}catch{}
+try{config=JSON.parse(localStorage.getItem(CONF)||"{}")||{}}catch{}
+try{apiKey=sessionStorage.getItem(SESSION)||""}catch{}
+function status(t){$("status").textContent=t}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(chats))}catch{status("Kunde inte spara historiken. Exportera gärna.")}}
+function chat(){return chats.find(x=>x.id===active)}
+function fresh(){if(busy)return;const c={id:crypto.randomUUID(),title:"Ny konversation",messages:[],created:Date.now()};chats.unshift(c);active=c.id;persist();render()}
+function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
+function render(){
+const root=$("conversation");root.replaceChildren();const c=chat();
+if(!c||!c.messages.length){
+const w=el("div","welcome");w.innerHTML='<div class="orb">✦</div><h1>Vad kan jag hjälpa dig med?</h1><p>Välkommen till EWEW. Din personliga AI-arbetsyta, skapad för din iPhone.</p>';
+const s=el("div","suggestions");
+["Hjälp mig planera dagen","Förklara något svårt","Ge mig kreativa idéer","Hjälp mig skriva en text"].forEach(t=>{const b=el("button","",t);b.onclick=()=>{$("prompt").value=t;$("prompt").focus()};s.append(b)});
+w.append(s);root.append(w);
+}else c.messages.forEach(m=>{const b=el("div","bubble "+m.role+(m.error?" error":""));b.append(el("div","role",m.role==="user"?"DU":"EWEW"));b.append(el("div","",m.content));root.append(b)});
+root.scrollTop=root.scrollHeight
+}
+function explainError(statusCode,detail){
+let hint="";
+if(statusCode===401||statusCode===403)hint=" Kontrollera API-nyckeln och att den har åtkomst.";
+if(statusCode===404)hint=" Kontrollera API-adress och modellnamn.";
+if(statusCode===429)hint=" Gratisgränsen kan vara nådd. Prova senare.";
+return "HTTP "+statusCode+(detail?": "+String(detail).slice(0,350):".")+hint
+}
+async function requestAI(settings,messages){
+if(!settings.endpoint||!settings.model)throw Error("API-adress eller modell saknas.");
+if(!settings.key)throw Error("API-nyckel saknas. Öppna Inställningar och ange nyckeln.");
+let url;try{url=new URL(settings.endpoint)}catch{throw Error("API-adressen är ogiltig.")}if(url.protocol!=="https:")throw Error("API-adressen måste börja med https://");
+const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),45000);
+try{
+const response=await fetch(url.toString(),{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+settings.key},signal:controller.signal,body:JSON.stringify({model:settings.model,messages,stream:false})});
+if(!response.ok){let detail="";try{const body=await response.json();detail=body?.error?.message||body?.message||""}catch{}throw Error(explainError(response.status,detail))}
+const data=await response.json(),answer=data?.choices?.[0]?.message?.content;
+if(typeof answer!=="string"||!answer.trim())throw Error("AI-tjänsten gav inget textsvar.");
+return answer;
+}catch(e){if(e.name==="AbortError")throw Error("Anslutningen tog för lång tid (45 sekunder).");if(e instanceof TypeError)throw Error("Nätverksfel eller webbläsarblockering (CORS). Kontrollera internet och API-tjänstens stöd för webbläsare.");throw e}
+finally{clearTimeout(timer)}
+}
+async function send(){
+if(busy)return;const content=$("prompt").value.trim();if(!content)return;
+if(!chat())fresh();const c=chat();c.messages.push({role:"user",content});if(c.messages.length===1)c.title=content.slice(0,55);$("prompt").value="";persist();render();
+busy=true;$("sendBtn").disabled=true;status("EWEW tänker…");
+try{
+const messages=[{role:"system",content:"Du är EWEW, en hjälpsam AI-assistent. Svara på svenska om användaren inte ber om annat."},...c.messages.filter(m=>!m.error).slice(-20).map(({role,content})=>({role,content}))];
+const answer=await requestAI({...config,key:apiKey},messages);c.messages.push({role:"assistant",content:answer})
+}catch(e){c.messages.push({role:"assistant",content:"Kunde inte hämta AI-svar: "+e.message,error:true})}
+finally{busy=false;$("sendBtn").disabled=false;status("Privat historik sparas på den här enheten");persist();render()}
+}
+function saveConfig(){
+config={endpoint:$("endpoint").value.trim(),model:$("model").value.trim()};
+apiKey=$("apiKey").value.trim();
+localStorage.setItem(CONF,JSON.stringify(config));
+try{if(apiKey)sessionStorage.setItem(SESSION,apiKey);else sessionStorage.removeItem(SESSION)}catch{}
+$("settingsDialog").close();status(config.endpoint&&config.model&&apiKey?"AI-tjänst konfigurerad":"AI-anslutningen behöver kompletteras")
+}
+$("sendBtn").onclick=send;
+$("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
+$("newBtn").onclick=fresh;
+$("provider").onchange=()=>{const p=PROVIDERS[$("provider").value];if(p){$("endpoint").value=p.endpoint;$("model").value=p.model}};
+$("settingsBtn").onclick=()=>{
+$("endpoint").value=config.endpoint||PROVIDERS.groq.endpoint;
+$("model").value=config.model||PROVIDERS.groq.model;
+$("apiKey").value=apiKey;
+$("provider").value=Object.keys(PROVIDERS).find(k=>PROVIDERS[k].endpoint===$("endpoint").value)||"custom";
+$("testResult").textContent="";$("settingsDialog").showModal()
+};
+$("cancelSettings").onclick=()=>$("settingsDialog").close();
+$("saveSettings").onclick=saveConfig;
+$("testSettings").onclick=async()=>{
+const b=$("testSettings");b.disabled=true;$("testResult").textContent="Testar anslutningen…";
+try{const answer=await requestAI({endpoint:$("endpoint").value.trim(),model:$("model").value.trim(),key:$("apiKey").value.trim()},[{role:"user",content:"Svara enbart OK."}]);$("testResult").textContent="✓ Anslutningen fungerar! AI svarade: "+answer.slice(0,100)}
+catch(e){$("testResult").textContent="Anslutningen misslyckades: "+e.message}
+finally{b.disabled=false}
+};
+$("historyBtn").onclick=()=>{const h=$("history");h.replaceChildren();chats.forEach(c=>{const b=el("button",c.id===active?"selected":"",c.title);b.onclick=()=>{active=c.id;render();$("historyDialog").close()};h.append(b)});$("historyDialog").showModal()};
+$("closeHistory").onclick=()=>$("historyDialog").close();
+$("deleteBtn").onclick=()=>{if(busy)return;const c=chat();if(!c||!confirm("Radera den här konversationen permanent från denna enhet?"))return;chats=chats.filter(x=>x.id!==c.id);active=chats[0]?.id||null;persist();if(!active)fresh();else render()};
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").onchange=async e=>{
+const f=e.target.files[0];if(!f)return;
+try{
+if(f.size>5000000)throw Error("Filen är för stor (max 5 MB)");
+const data=JSON.parse(await f.text());
+if(!Array.isArray(data)||data.length>500||!data.every(c=>typeof c.title==="string"&&Array.isArray(c.messages)&&c.messages.length<1000&&c.messages.every(m=>["user","assistant"].includes(m.role)&&typeof m.content==="string"&&m.content.length<100000)))throw Error("Ogiltig EWEW-export");
+if(!confirm("Importera "+data.length+" konversationer? Befintliga konversationer behålls."))return;
+const imported=data.map(c=>({id:crypto.randomUUID(),title:c.title.slice(0,80),created:Number(c.created)||Date.now(),messages:c.messages.map(m=>({role:m.role,content:m.content,error:!!m.error}))}));
+chats=[...imported,...chats];active=chats[0]?.id;persist();render();status("Importen klar")
+}catch(err){alert("Kunde inte importera: "+err.message)}finally{e.target.value=""}
+};
+$("exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(chats,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ewew-konversationer.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+if(chats.length)active=chats[0].id;else fresh();render();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body>
+</html>
