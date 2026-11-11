@@ -35,13 +35,18 @@ dialog::backdrop{background:#000a}dialog input,dialog select{width:100%;padding:
 dialog menu{display:flex;justify-content:flex-end;gap:10px;padding:0}
 #history{display:flex;flex-direction:column;gap:8px;max-height:45vh;overflow:auto}#history button{text-align:left}#history .selected{border-color:#8c7eff}
 @media(min-width:700px){.conversation{padding-left:50px;padding-right:50px}.bubble{max-width:75%}}
+
+#toolsDialog{max-height:85dvh;overflow:auto}#toolsDialog textarea{width:100%;min-height:100px;max-height:none;background:#0a1121;border:1px solid #455275;border-radius:10px;padding:12px;margin:8px 0;color:#fff}#toolsDialog input,#toolsDialog select{width:100%;padding:12px;background:#0a1121;color:#fff;border:1px solid #455275;border-radius:10px;margin:8px 0 12px}#toolsDialog label{display:block;margin-top:8px}#toolsDialog menu{flex-wrap:wrap}#imagePreview{max-width:100%;max-height:230px;object-fit:contain;border-radius:12px}#toolResult{white-space:pre-wrap;overflow-wrap:anywhere}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.umd.cjs" defer></script>
 </head>
 <body>
 <header><div><div class="logo">E<span>W</span>EW</div><div class="tag">YOUR INTELLIGENCE, EVOLVED</div></div><button id="settingsBtn">⚙ Inställningar</button></header>
 <main class="layout">
 <nav class="toolbar">
 <button id="newBtn" class="primary">＋ Ny chatt</button>
+<button id="toolsBtn" class="primary">✦ Skapa filer</button>
 <button id="historyBtn">☰ Historik</button>
 <button id="exportBtn">⇩ Exportera</button>
 <button id="importBtn">⇧ Importera</button>
@@ -51,6 +56,21 @@ dialog menu{display:flex;justify-content:flex-end;gap:10px;padding:0}
 <section id="conversation" class="conversation" aria-live="polite"></section>
 </main>
 <div class="composer"><div class="compose-inner"><textarea id="prompt" rows="1" placeholder="Fråga EWEW vad som helst..."></textarea><button class="primary" id="sendBtn">Skicka ↑</button></div><div class="foot" id="status">Privat historik sparas på den här enheten</div></div>
+<dialog id="toolsDialog">
+<h2>✦ EWEW Studio</h2>
+<p>Skapa riktiga PowerPoint- och Word-filer med AI. Kräver din befintliga Groq-anslutning. Filen skapas på din iPhone.</p>
+<label>Vad vill du skapa?<select id="fileType"><option value="pptx">PowerPoint (.pptx)</option><option value="docx">Word (.docx)</option></select></label>
+<label>Ämne eller instruktion<textarea id="fileTopic" placeholder="Exempel: En presentation med 6 bilder om kontinuitetsplanering, för kollegor på jobbet"></textarea></label>
+<label>Omfattning<select id="fileLength"><option value="5">Kort (5 delar)</option><option value="8">Normal (8 delar)</option><option value="12">Utförlig (12 delar)</option></select></label>
+<menu><button id="closeTools">Stäng</button><button id="createFile" class="primary">Skapa och hämta fil</button></menu>
+<p id="toolResult" role="status"></p>
+<hr style="border-color:#ffffff20;margin:24px 0">
+<h3>Bilduppladdning</h3>
+<p>Välj en bild för förhandsvisning. AI-bildanalys och bildredigering är ännu inte anslutna.</p>
+<input id="imageUpload" type="file" accept="image/*">
+<img id="imagePreview" hidden alt="Förhandsvisning av vald bild">
+<p id="imageInfo"></p>
+</dialog>
 <dialog id="settingsDialog">
 <h2>AI-inställningar</h2>
 <p>Välj Groq och ange din egen API-nyckel för AI-svar. Gratisnivån kan ha användningsgränser. Ingen betaltjänst aktiveras automatiskt.</p>
@@ -163,6 +183,43 @@ chats=[...imported,...chats];active=chats[0]?.id;persist();render();status("Impo
 }catch(err){alert("Kunde inte importera: "+err.message)}finally{e.target.value=""}
 };
 $("exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(chats,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ewew-konversationer.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+
+// EWEW Studio: downloadable, editable Office files. No API key is embedded in exports.
+function cleanName(text,ext){return (text.normalize('NFKD').replace(/[^a-zA-Z0-9\s-]/g,'').trim().replace(/\s+/g,'-').slice(0,45)||'EWEW')+'.'+ext}
+function parseStudioJSON(text){const raw=text.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');try{return JSON.parse(raw)}catch{const a=raw.indexOf('{'),b=raw.lastIndexOf('}');if(a>=0&&b>a)return JSON.parse(raw.slice(a,b+1));throw Error('AI:n gav inte giltig struktur. Prova igen.') }}
+function safeParts(parts,max){if(!Array.isArray(parts))throw Error('AI:n gav inga avsnitt.');return parts.slice(0,max).map((p,i)=>({title:String(p?.title||'Del '+(i+1)).slice(0,110),bullets:(Array.isArray(p?.bullets)?p.bullets:[]).slice(0,5).map(x=>String(x).slice(0,240)),body:String(p?.body||'').slice(0,2500)}))}
+async function createPresentation(title,parts){
+if(typeof pptxgen==='undefined')throw Error('PowerPoint-biblioteket kunde inte laddas. Kontrollera internet och prova igen.');
+const pptx=new pptxgen();pptx.layout='LAYOUT_WIDE';pptx.author='EWEW Studio';pptx.subject=title;pptx.title=title;pptx.lang='sv-SE';
+let slide=pptx.addSlide();slide.background={color:'10172B'};slide.addText('EWEW  /  STUDIO',{x:.6,y:.55,w:8,h:.4,fontSize:13,color:'9D92FF',bold:true});slide.addText(title,{x:.8,y:2.2,w:11.7,h:2,fontFace:'Aptos Display',fontSize:34,bold:true,color:'FFFFFF',breakLine:false});slide.addText('Skapad med EWEW',{x:.8,y:6.5,w:8,h:.3,fontSize:12,color:'B6C4DE'});
+parts.forEach((p,i)=>{const sl=pptx.addSlide();sl.background={color:'10172B'};sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:.14,h:7.5,line:{color:'7566ED'},fill:{color:'7566ED'}});sl.addText(p.title,{x:.65,y:.48,w:12,h:.85,fontSize:28,bold:true,color:'FFFFFF',breakLine:false});const lines=p.bullets.length?p.bullets:(p.body.match(/[^.!?]+[.!?]?/g)||[]).map(x=>x.trim()).filter(Boolean).slice(0,5);let y=1.7;lines.forEach(t=>{sl.addText('•  '+t,{x:.85,y,w:11.6,h:Math.min(.9,Math.max(.45,Math.ceil(t.length/72)*.4)),fontSize:19,color:'E5EBFF',breakLine:false,margin:0});y+=Math.min(1.05,Math.max(.75,Math.ceil(t.length/72)*.48));});sl.addText('EWEW STUDIO',{x:.7,y:7.07,w:3,h:.2,fontSize:9,color:'A0AFC9'});sl.addText(String(i+2),{x:12.1,y:7.07,w:.5,h:.2,fontSize:9,color:'A0AFC9',align:'right'})});
+await pptx.writeFile({fileName:cleanName(title,'pptx')});
+}
+async function createDocument(title,parts){
+if(!window.docx?.Document)throw Error('Word-biblioteket kunde inte laddas. Kontrollera internet och prova igen.');
+const D=window.docx;const children=[new D.Paragraph({text:title,heading:D.HeadingLevel.TITLE}),new D.Paragraph({text:'Skapad med EWEW Studio',spacing:{after:400}})];
+parts.forEach(p=>{children.push(new D.Paragraph({text:p.title,heading:D.HeadingLevel.HEADING_1}));if(p.body)children.push(new D.Paragraph({text:p.body,spacing:{after:160}}));p.bullets.forEach(t=>children.push(new D.Paragraph({text:t,bullet:{level:0}})))});
+const wordDoc=new D.Document({sections:[{properties:{},children}]});const blob=await D.Packer.toBlob(wordDoc);const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=cleanName(title,'docx');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000);
+}
+$('toolsBtn').onclick=()=>{$('toolResult').textContent='';$('toolsDialog').showModal()};
+$('closeTools').onclick=()=>$('toolsDialog').close();
+$('createFile').onclick=async()=>{
+const b=$('createFile'),type=$('fileType').value,topic=$('fileTopic').value.trim(),count=Number($('fileLength').value);
+if(!topic){$('toolResult').textContent='Skriv först vad filen ska handla om.';return}
+if(!apiKey||!config.endpoint||!config.model){$('toolResult').textContent='Anslut Groq i Inställningar först.';return}
+b.disabled=true;$('toolResult').textContent='AI:n tar fram innehållet. Vänta en stund…';
+try{
+const instruction=type==='pptx'?'presentation':'dokument';
+const prompt='Skapa ett genomarbetat svenskt '+instruction+' om: '+topic+'. Ge exakt '+count+' delar. Svara ENBART med giltig JSON utan markdown enligt {"title":"Titel","parts":[{"title":"Rubrik","bullets":["Punkt 1","Punkt 2","Punkt 3"],"body":"Ett välskrivet stycke med förklaringar"}]}. Var saklig, konkret, välstrukturerad och anpassa till önskad målgrupp. Hitta inte på fakta eller källor.';
+const result=await requestAI({...config,key:apiKey},[{role:'user',content:prompt}]);const data=parseStudioJSON(result);const title=String(data.title||topic).slice(0,100),parts=safeParts(data.parts,count);
+if(!parts.length)throw Error('Inget innehåll skapades.');$('toolResult').textContent='Innehållet är klart. Skapar fil…';
+if(type==='pptx')await createPresentation(title,parts);else await createDocument(title,parts);
+$('toolResult').textContent='✓ Filen har skapats. Kontrollera Hämtade filer på din iPhone.';
+}catch(e){$('toolResult').textContent='Kunde inte skapa fil: '+e.message}finally{b.disabled=false}
+};
+let previewURL=null;
+$('imageUpload').onchange=e=>{const file=e.target.files?.[0];if(previewURL)URL.revokeObjectURL(previewURL);$('imagePreview').hidden=true;if(!file)return;if(!file.type.startsWith('image/')){$('imageInfo').textContent='Välj en bildfil.';return}previewURL=URL.createObjectURL(file);$('imagePreview').src=previewURL;$('imagePreview').hidden=false;$('imageInfo').textContent=file.name+' · '+(file.size/1024/1024).toFixed(2)+' MB. Bilden har inte skickats till AI:n.'};
+
 if(chats.length)active=chats[0].id;else fresh();render();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
 </script>
