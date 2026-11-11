@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="EWEW">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>EWEW — Din AI</title>
+<title>EWEW 2.3 — Din AI</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e9efff;background:#090d18}
 *{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 60% -20%,#27375e,transparent 55%),#090d18}
@@ -62,6 +62,8 @@ dialog menu{display:flex;justify-content:flex-end;gap:10px;padding:0}
 <label>Vad vill du skapa?<select id="fileType"><option value="pptx">PowerPoint (.pptx)</option><option value="docx">Word (.docx)</option></select></label>
 <label>Ämne eller instruktion<textarea id="fileTopic" placeholder="Exempel: En presentation med 6 bilder om kontinuitetsplanering, för kollegor på jobbet"></textarea></label>
 <label>Omfattning<select id="fileLength"><option value="5">Kort (5 delar)</option><option value="8">Normal (8 delar)</option><option value="12">Utförlig (12 delar)</option></select></label>
+<label>Designstil<select id="fileStyle"><option value="auto">✦ Automatisk – EWEW väljer</option><option value="premium">Premium – exklusiv</option><option value="business">Business – professionell</option><option value="modern">Modern – uttrycksfull</option><option value="minimal">Minimalistisk – luftig</option></select></label>
+<label>Publik / målgrupp<input id="fileAudience" placeholder="Exempel: kollegor, ledningsgrupp, elever (valfritt)"></label>
 <menu><button id="closeTools">Stäng</button><button id="createFile" class="primary">Skapa och hämta fil</button></menu>
 <p id="toolResult" role="status"></p>
 <hr style="border-color:#ffffff20;margin:24px 0">
@@ -201,13 +203,100 @@ try{await new Promise((resolve,reject)=>{const tag=document.createElement('scrip
 }
 throw Error('PowerPoint-biblioteket kunde inte laddas. Kontrollera nätverket och försök igen.');
 }
-async function createPresentation(title,parts){
-await ensurePowerPointLibrary();
-const PptxConstructor=window.PptxGenJS||window.pptxgen;
-const pptx=new PptxConstructor();pptx.layout='LAYOUT_WIDE';pptx.author='EWEW Studio';pptx.subject=title;pptx.title=title;pptx.lang='sv-SE';
-let slide=pptx.addSlide();slide.background={color:'10172B'};slide.addText('EWEW  /  STUDIO',{x:.6,y:.55,w:8,h:.4,fontSize:13,color:'9D92FF',bold:true});slide.addText(title,{x:.8,y:2.2,w:11.7,h:2,fontFace:'Aptos Display',fontSize:34,bold:true,color:'FFFFFF',breakLine:false});slide.addText('Skapad med EWEW',{x:.8,y:6.5,w:8,h:.3,fontSize:12,color:'B6C4DE'});
-parts.forEach((p,i)=>{const sl=pptx.addSlide();sl.background={color:'10172B'};sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:.14,h:7.5,line:{color:'7566ED'},fill:{color:'7566ED'}});sl.addText(p.title,{x:.65,y:.48,w:12,h:.85,fontSize:28,bold:true,color:'FFFFFF',breakLine:false});const lines=p.bullets.length?p.bullets:(p.body.match(/[^.!?]+[.!?]?/g)||[]).map(x=>x.trim()).filter(Boolean).slice(0,5);let y=1.7;lines.forEach(t=>{sl.addText('•  '+t,{x:.85,y,w:11.6,h:Math.min(.9,Math.max(.45,Math.ceil(t.length/72)*.4)),fontSize:19,color:'E5EBFF',breakLine:false,margin:0});y+=Math.min(1.05,Math.max(.75,Math.ceil(t.length/72)*.48));});sl.addText('EWEW STUDIO',{x:.7,y:7.07,w:3,h:.2,fontSize:9,color:'A0AFC9'});sl.addText(String(i+2),{x:12.1,y:7.07,w:.5,h:.2,fontSize:9,color:'A0AFC9',align:'right'})});
-await pptx.writeFile({fileName:cleanName(title,'pptx')});
+const PPT_THEMES={
+ premium:{bg:'11151D',panel:'1E2632',fg:'F9F5ED',muted:'B9B6B0',accent:'D7AF68',soft:'393429'},
+ business:{bg:'F7F9FC',panel:'E8EEF6',fg:'162C4C',muted:'53677D',accent:'2863AC',soft:'DCE8F7'},
+ modern:{bg:'0B1920',panel:'12323A',fg:'F2FFFB',muted:'A7C8C8',accent:'43E0B7',soft:'204A4B'},
+ minimal:{bg:'FFFFFF',panel:'F4F5F7',fg:'20252B',muted:'66717D',accent:'53677E',soft:'E8EDF2'}
+};
+function choosePptTheme(topic,style){
+ if(PPT_THEMES[style])return style;
+ const t=topic.toLowerCase();
+ if(/bil|tesla|sport|teknik|ai|framtid|innovation|energi/.test(t))return 'modern';
+ if(/företag|ledning|strategi|budget|polis|arbete|utbildning|rapport/.test(t))return 'business';
+ if(/lyx|design|arkitektur|hotell|premium|mode/.test(t))return 'premium';
+ return 'minimal';
+}
+function shortText(x,n=150){return String(x||'').replace(/\s+/g,' ').trim().slice(0,n)}
+function pptText(sl,text,x,y,w,h,opts={}){sl.addText(shortText(text,opts.limit||300),{x,y,w,h,fontFace:'Aptos',margin:0,breakLine:false,fit:'shrink',valign:'mid',...opts});}
+function pptShape(sl,pptx,type,x,y,w,h,fill,line){sl.addShape(type,{x,y,w,h,line:{color:line||fill,transparency:line?0:100},fill:{color:fill},radius:.12});}
+function pptHeader(sl,pptx,theme,kicker,title,num,total){
+ pptShape(sl,pptx,pptx.ShapeType.rect,0,0,13.333,.09,theme.accent);
+ pptText(sl,kicker.toUpperCase(),.72,.43,10,.25,{fontSize:10,bold:true,color:theme.accent,charSpacing:1.8});
+ pptText(sl,title,.72,.93,11.8,1.1,{fontSize:29,bold:true,color:theme.fg,limit:110,valign:'top'});
+ pptShape(sl,pptx,pptx.ShapeType.line,.72,6.95,11.85,.01,theme.soft);
+ pptText(sl,'EWEW  /  STUDIO',.72,7.06,4,.18,{fontSize:9,color:theme.muted});
+ pptText(sl,String(num).padStart(2,'0')+' / '+String(total).padStart(2,'0'),11.3,7.05,1.25,.2,{fontSize:9,color:theme.muted,align:'right'});
+}
+function getPptBullets(part){
+ const items=Array.isArray(part.bullets)?part.bullets.filter(Boolean):[];
+ if(items.length)return items.slice(0,5).map(x=>shortText(x,135));
+ return String(part.body||'').split(/(?<=[.!?])\s+/).filter(Boolean).slice(0,4).map(x=>shortText(x,135));
+}
+async function createPresentation(title,parts,style='auto'){
+ await ensurePowerPointLibrary();
+ const PptxConstructor=window.PptxGenJS||window.pptxgen;
+ const pptx=new PptxConstructor();pptx.layout='LAYOUT_WIDE';pptx.author='EWEW Studio';pptx.subject=title;pptx.title=title;pptx.lang='sv-SE';
+ const chosen=choosePptTheme(title+' '+parts.map(x=>x.title).join(' '),style),t=PPT_THEMES[chosen];
+ const total=parts.length+2;
+ let sl=pptx.addSlide();sl.background={color:t.bg};
+ pptShape(sl,pptx,pptx.ShapeType.rect,9.3,0,4.03,7.5,t.panel);
+ pptShape(sl,pptx,pptx.ShapeType.rect,9.3,0,.10,7.5,t.accent);
+ pptShape(sl,pptx,pptx.ShapeType.ellipse,9.95,1.1,2.6,2.6,t.soft);
+ pptShape(sl,pptx,pptx.ShapeType.ellipse,10.58,1.73,1.35,1.35,t.accent);
+ pptText(sl,'EWEW  /  STUDIO',.85,.7,7,.4,{fontSize:13,bold:true,color:t.accent,charSpacing:2});
+ pptText(sl,title,.85,2.02,8.0,2.8,{fontSize:41,bold:true,color:t.fg,limit:130,valign:'mid'});
+ pptShape(sl,pptx,pptx.ShapeType.rect,.85,5.57,1.2,.07,t.accent);
+ pptText(sl,'En presentation skapad med EWEW',.85,6.1,7,.35,{fontSize:13,color:t.muted});
+ parts.forEach((p,i)=>{
+  const s=pptx.addSlide();s.background={color:t.bg};
+  const kind=i%4;const bullets=getPptBullets(p);
+  pptHeader(s,pptx,t,'Del '+(i+1),p.title,i+2,total);
+  if(kind===0){
+   pptShape(s,pptx,pptx.ShapeType.rect,.72,2.38,7.75,3.85,t.panel);
+   bullets.slice(0,4).forEach((b,j)=>{
+    pptShape(s,pptx,pptx.ShapeType.ellipse,1.04,2.75+j*.82,.29,.29,t.accent);
+    pptText(s,b,1.57,2.64+j*.82,6.48,.6,{fontSize:19,color:t.fg,limit:115});
+   });
+   pptShape(s,pptx,pptx.ShapeType.rect,8.78,2.38,3.77,3.85,t.soft);
+   pptText(s,String(i+1).padStart(2,'0'),9.05,2.72,3.2,2,{fontSize:83,bold:true,color:t.accent,align:'center'});
+   pptText(s,'NYCKELPUNKTER',9.08,5.25,3.2,.35,{fontSize:12,bold:true,color:t.muted,align:'center'});
+  }else if(kind===1){
+   const list=bullets.slice(0,3);
+   list.forEach((b,j)=>{
+    const x=.72+j*4.04;
+    pptShape(s,pptx,pptx.ShapeType.rect,x,2.55,3.78,3.52,t.panel);
+    pptShape(s,pptx,pptx.ShapeType.rect,x,2.55,3.78,.10,t.accent);
+    pptText(s,String(j+1).padStart(2,'0'),x+.24,2.93,3.2,.65,{fontSize:35,bold:true,color:t.accent});
+    pptText(s,b,x+.24,3.85,3.26,1.78,{fontSize:18,color:t.fg,limit:125,valign:'top'});
+   });
+  }else if(kind===2){
+   pptShape(s,pptx,pptx.ShapeType.rect,.72,2.5,4.5,3.85,t.accent);
+   pptText(s,shortText(p.title,55),1.05,3.1,3.85,2.5,{fontSize:29,bold:true,color:chosen==='business'||chosen==='minimal'?'FFFFFF':'101820',valign:'mid'});
+   bullets.slice(0,4).forEach((b,j)=>{
+    pptShape(s,pptx,pptx.ShapeType.rect,5.62,2.55+j*.91,.11,.56,t.accent);
+    pptText(s,b,6.0,2.48+j*.91,6.15,.75,{fontSize:18,color:t.fg,limit:120});
+   });
+  }else{
+   const list=bullets.slice(0,4);
+   list.forEach((b,j)=>{
+    const x=.72+(j%2)*6.07,y=2.47+Math.floor(j/2)*1.92;
+    pptShape(s,pptx,pptx.ShapeType.rect,x,y,5.75,1.68,t.panel);
+    pptShape(s,pptx,pptx.ShapeType.rect,x,y,.09,1.68,t.accent);
+    pptText(s,b,x+.35,y+.23,5.05,1.22,{fontSize:19,color:t.fg,limit:120,valign:'mid'});
+   });
+  }
+ });
+ sl=pptx.addSlide();sl.background={color:t.bg};
+ pptShape(sl,pptx,pptx.ShapeType.rect,.8,1.15,1.25,.10,t.accent);
+ pptText(sl,'SAMMANFATTNING',.8,1.55,10,.4,{fontSize:13,bold:true,color:t.accent,charSpacing:1.6});
+ pptText(sl,'Det viktigaste att ta med sig',.8,2.15,11.7,1.1,{fontSize:34,bold:true,color:t.fg});
+ parts.slice(-3).forEach((p,j)=>{
+  pptShape(sl,pptx,pptx.ShapeType.rect,.85,3.55+j*.9,.12,.58,t.accent);
+  pptText(sl,shortText(p.title,100),1.2,3.45+j*.9,10.6,.75,{fontSize:21,color:t.fg});
+ });
+ pptText(sl,'EWEW  /  STUDIO',.85,7.05,5,.2,{fontSize:9,color:t.muted});
+ await pptx.writeFile({fileName:cleanName(title,'pptx')});
 }
 async function createDocument(title,parts){
 if(!window.docx?.Document)throw Error('Word-biblioteket kunde inte laddas. Kontrollera internet och prova igen.');
@@ -218,16 +307,16 @@ const document=new D.Document({sections:[{properties:{},children}]});const blob=
 $('toolsBtn').onclick=()=>{$('toolResult').textContent='';$('toolsDialog').showModal()};
 $('closeTools').onclick=()=>$('toolsDialog').close();
 $('createFile').onclick=async()=>{
-const b=$('createFile'),type=$('fileType').value,topic=$('fileTopic').value.trim(),count=Number($('fileLength').value);
+const b=$('createFile'),type=$('fileType').value,topic=$('fileTopic').value.trim(),count=Number($('fileLength').value),style=$('fileStyle').value,audience=$('fileAudience').value.trim();
 if(!topic){$('toolResult').textContent='Skriv först vad filen ska handla om.';return}
 if(!apiKey||!config.endpoint||!config.model){$('toolResult').textContent='Anslut Groq i Inställningar först.';return}
 b.disabled=true;$('toolResult').textContent='AI:n tar fram innehållet. Vänta en stund…';
 try{
 const instruction=type==='pptx'?'presentation':'dokument';
-const prompt='Skapa ett genomarbetat svenskt '+instruction+' om: '+topic+'. Ge exakt '+count+' delar. Svara ENBART med giltig JSON utan markdown enligt {"title":"Titel","parts":[{"title":"Rubrik","bullets":["Punkt 1","Punkt 2","Punkt 3"],"body":"Ett välskrivet stycke med förklaringar"}]}. Var saklig, konkret, välstrukturerad och anpassa till önskad målgrupp. Hitta inte på fakta eller källor.';
+const prompt='Du är en erfaren svensk presentationsstrateg och redaktör. Skapa ett professionellt '+instruction+' om: '+topic+'. Målgrupp: '+(audience||'allmän, anpassa efter ämnet')+'. Ge exakt '+count+' delar som tillsammans bygger en tydlig berättelse: bakgrund, viktigaste insikter, fördjupning och slutsatser. Varje del ska ha en kort slagkraftig rubrik, 3–4 SPECIFIKA korta punkter (max 12 ord per punkt) och ett sakligt förklarande stycke. Variera perspektiv, undvik upprepningar och generiska formuleringar. Hitta inte på siffror, statistik, citat eller källor. Svara ENBART med giltig JSON utan markdown enligt {"title":"Titel","parts":[{"title":"Rubrik","bullets":["Punkt 1","Punkt 2","Punkt 3"],"body":"Förklarande stycke"}]}.';
 const result=await requestAI({...config,key:apiKey},[{role:'user',content:prompt}]);const data=parseStudioJSON(result);const title=String(data.title||topic).slice(0,100),parts=safeParts(data.parts,count);
 if(!parts.length)throw Error('Inget innehåll skapades.');$('toolResult').textContent='Innehållet är klart. Skapar fil…';
-if(type==='pptx')await createPresentation(title,parts);else await createDocument(title,parts);
+if(type==='pptx')await createPresentation(title,parts,style);else await createDocument(title,parts);
 $('toolResult').textContent='✓ Filen har skapats. Kontrollera Hämtade filer på din iPhone.';
 }catch(e){$('toolResult').textContent='Kunde inte skapa fil: '+e.message}finally{b.disabled=false}
 };
